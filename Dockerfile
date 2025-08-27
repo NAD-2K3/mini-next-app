@@ -14,6 +14,14 @@ WORKDIR /app/apps/next-app
 
 RUN npm run build
 
+FROM node:current-alpine as runtime
+
+RUN apk add --no-cache libc6-compat
+
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/apps/next-app/.next ./.next
+COPY --from=base /app/apps/next-app/package.json ./
+
 EXPOSE 3000
 
 ENTRYPOINT ["npm", "run", "start"]
