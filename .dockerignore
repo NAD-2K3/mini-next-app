@@ -1,0 +1,11 @@
+node_modules/
+apps/next-app/node_modules/
+apps/next-app/.next/
+.vscode/
+.nx/
+README.md
+.prettierignore
+.prettierrc
+.editorconfig
+.gitignore
+nx.json
