@@ -48,3 +48,10 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest
+          build-args: |
+            NEXT_PUBLIC_AWS_REGION=${{ secrets.NEXT_PUBLIC_AWS_REGION }}
+            NEXT_PUBLIC_AWS_ACCOUNT=${{ secrets.NEXT_PUBLIC_AWS_ACCOUNT }}
+            NEXT_PUBLIC_S3_BUCKET=${{ secrets.NEXT_PUBLIC_S3_BUCKET }}
+            NEXT_PUBLIC_USER_POOL_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_ID }}
+            NEXT_PUBLIC_USER_POOL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_CLIENT_ID }}
+            NEXT_PUBLIC_USER_POOL_IDENTITY_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_IDENTITY_ID }}
