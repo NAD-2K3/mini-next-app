@@ -1,8 +1,8 @@
 name: CI / CD for mini-next-app
 # Add Comment to test PRs
 on:
-  push:
-    branches: [ "main" ]   
+  # push:
+  #   branches: [ "main" ]   
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
@@ -116,7 +116,7 @@ jobs:
           aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws_default_region: ap-southeast-1
 
-          aws_elb_app_port: 3000
+          aws_elb_create: false
           aws_ec2_port_list: 80,443
 
           docker_install: true
