@@ -1,10 +1,10 @@
 name: CI / CD for mini-next-app
 
 on:
-  # push:
-  #   branches: [ "feature" ]   
-  # pull_request:
-  #   branches: [ "feature" ]
+  push:
+    branches: [ "feature" ]   
+  pull_request:
+    branches: [ "feature" ]
   workflow_dispatch:
 
 jobs:
@@ -31,6 +31,31 @@ jobs:
         run: npx nx lint next-app
         continue-on-error: true
 
+      - name: Code Quality Analysis with SonarCloud  
+        uses: SonarSource/sonarqube-scan-action@v5.3.1
+        with:
+          args: >
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ secrets.SONAR_ORG }}
+            -Dsonar.sources=.
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      
+      - name: Dependencies Analysis with Snyk
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+
+      - name: IaC Analysis with Snyk
+        uses: snyk/actions/iac@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          file: ./cdk
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -43,12 +68,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          push: true
+          push: false
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest
           build-args: |
             NEXT_PUBLIC_AWS_REGION=${{ secrets.NEXT_PUBLIC_AWS_REGION }}
@@ -58,16 +83,17 @@ jobs:
             NEXT_PUBLIC_USER_POOL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_CLIENT_ID }}
             NEXT_PUBLIC_USER_POOL_IDENTITY_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_IDENTITY_ID }}
 
-  # deploy:
-  #   needs: build
-  #   runs-on: ubuntu-latest
+      - name: Scan Docker image with Snyk
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest
+        continue-on-error: true
 
-  #   steps:
-  #     - name: Deploy to AWS Amplify hosting
-  #       uses: einaregilsson/amplify-deploy@v2
-  #       with:
-  #         app-id: ${{ secrets.AMPLIFY_APP_ID }}
-  #         branch-name: feature
-  #         access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         region: ${{ secrets.AWS_REGION }}
+      - name: Push Docker image to Docker Hub
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest
