@@ -117,7 +117,7 @@ jobs:
           aws_default_region: ap-southeast-1
 
           aws_elb_create: false
-          aws_ec2_port_list: 80,443
+          aws_ec2_port_list: 22,80,443
 
           docker_install: true
           docker_repo_app_directory: "/" 
