@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -69,19 +69,17 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: false
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest
-          build-args: |
-            NEXT_PUBLIC_AWS_REGION=${{ secrets.NEXT_PUBLIC_AWS_REGION }}
-            NEXT_PUBLIC_AWS_ACCOUNT=${{ secrets.NEXT_PUBLIC_AWS_ACCOUNT }}
-            NEXT_PUBLIC_S3_BUCKET=${{ secrets.NEXT_PUBLIC_S3_BUCKET }}
-            NEXT_PUBLIC_USER_POOL_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_ID }}
-            NEXT_PUBLIC_USER_POOL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_CLIENT_ID }}
-            NEXT_PUBLIC_USER_POOL_IDENTITY_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_IDENTITY_ID }}
+        run: |
+          docker build \
+          -f ./Dockerfile \
+          -t ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest \
+          --build-arg NEXT_PUBLIC_AWS_REGION=${{ secrets.NEXT_PUBLIC_AWS_REGION }} \
+          --build-arg NEXT_PUBLIC_AWS_ACCOUNT=${{ secrets.NEXT_PUBLIC_AWS_ACCOUNT }} \
+          --build-arg NEXT_PUBLIC_S3_BUCKET=${{ secrets.NEXT_PUBLIC_S3_BUCKET }} \
+          --build-arg NEXT_PUBLIC_USER_POOL_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_ID }} \
+          --build-arg NEXT_PUBLIC_USER_POOL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_CLIENT_ID }} \
+          --build-arg NEXT_PUBLIC_USER_POOL_IDENTITY_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_IDENTITY_ID }} \
+          .
 
       - name: Scan Docker image with Snyk
         uses: snyk/actions/docker@master
@@ -92,8 +90,25 @@ jobs:
         continue-on-error: true
 
       - name: Push Docker image to Docker Hub
-        uses: docker/build-push-action@v6
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - id: deploy
+        uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.2
         with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_default_region: ap-southeast-1
+
+          aws_elb_app_port: 3000
+
+          docker_install: true
+          docker_repo_app_directory: "/" 
+
+          env_ghs: DOT_ENV

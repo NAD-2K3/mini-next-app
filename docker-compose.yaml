@@ -1,0 +1,6 @@
+services:
+  next-app:
+    image: dukedocker687/mini-next-app:latest  # <- pulls from Docker Hub
+    ports:
+      - "80:3000"   # map ELB or SG ports accordingly
+    env_file: .env  
