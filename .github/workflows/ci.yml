@@ -1,10 +1,10 @@
 name: CI / CD for mini-next-app
 
 on:
-  # push:
-  #   branches: [ "main", "feature" ]   
-  # pull_request:
-  #   branches: [ "main", "feature" ]
+  push:
+    branches: [ "main" ]   
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -104,7 +104,7 @@ jobs:
 
   deploy:
     needs: build-and-test
-    if: github.event_name = 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
