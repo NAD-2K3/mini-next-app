@@ -8,57 +8,57 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-test:
-    runs-on: arc-runners
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+  # build-and-test:
+  #   runs-on: arc-runners
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '22'
+  #         cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm ci
+  #     - name: Install Dependencies
+  #       run: npm ci
 
-      - name: Check Nx status
-        run: npx nx report
+  #     - name: Check Nx status
+  #       run: npx nx report
 
-      - name: Run Tests
-        run: npx nx lint next-app
-        continue-on-error: true
+  #     - name: Run Tests
+  #       run: npx nx lint next-app
+  #       continue-on-error: true
 
-      - name: Code Quality Analysis with SonarCloud  
-        uses: SonarSource/sonarqube-scan-action@v5.3.1
-        with:
-          args: >
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.organization=${{ secrets.SONAR_ORG }}
-            -Dsonar.sources=.
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #     - name: Code Quality Analysis with SonarCloud  
+  #       uses: SonarSource/sonarqube-scan-action@v5.3.1
+  #       with:
+  #         args: >
+  #           -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+  #           -Dsonar.organization=${{ secrets.SONAR_ORG }}
+  #           -Dsonar.sources=.
+  #       env:
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       
-      - name: Dependencies Analysis with Snyk
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
+  #     - name: Dependencies Analysis with Snyk
+  #       uses: snyk/actions/node@master
+  #       env:
+  #         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+  #       with:
+  #         command: monitor
 
-      - name: IaC Analysis with Snyk
-        uses: snyk/actions/iac@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
-          file: ./cdk
+  #     - name: IaC Analysis with Snyk
+  #       uses: snyk/actions/iac@master
+  #       env:
+  #         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+  #       with:
+  #         command: monitor
+  #         file: ./cdk
 
   scan_and_push_image:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build-and-test
+    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # needs: build-and-test
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
         run: |
           docker build \
           -f ./Dockerfile \
-          -t ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest \
+          -t ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:staging \
           --build-arg NEXT_PUBLIC_AWS_REGION=${{ secrets.NEXT_PUBLIC_AWS_REGION }} \
           --build-arg NEXT_PUBLIC_AWS_ACCOUNT=${{ secrets.NEXT_PUBLIC_AWS_ACCOUNT }} \
           --build-arg NEXT_PUBLIC_S3_BUCKET=${{ secrets.NEXT_PUBLIC_S3_BUCKET }} \
@@ -93,33 +93,33 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:staging
           command: monitor
         continue-on-error: true
 
       - name: Push Docker image to Docker Hub
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:staging
 
-  deploy:
-    needs: scan_and_push_image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+  # deploy:
+  #   needs: scan_and_push_image
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v4
 
-      - id: deploy
-        uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.2
-        with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_default_region: ap-southeast-1
+  #     - id: deploy
+  #       uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.2
+  #       with:
+  #         aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws_default_region: ap-southeast-1
 
-          aws_elb_create: false
-          aws_ec2_port_list: 22,80,443
+  #         aws_elb_create: false
+  #         aws_ec2_port_list: 22,80,443
 
-          docker_install: true
-          docker_repo_app_directory: "/" 
+  #         docker_install: true
+  #         docker_repo_app_directory: "/" 
 
-          env_ghs: DOT_ENV
+  #         env_ghs: DOT_ENV
