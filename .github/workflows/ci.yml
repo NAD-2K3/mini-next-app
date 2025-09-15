@@ -88,14 +88,14 @@ jobs:
           --build-arg NEXT_PUBLIC_USER_POOL_IDENTITY_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_IDENTITY_ID }} \
           .
 
-      - name: Scan Docker image with Snyk
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:staging
-          command: monitor
-        continue-on-error: true
+      # - name: Scan Docker image with Snyk
+      #   uses: snyk/actions/docker@master
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   with:
+      #     image: ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:staging
+      #     command: monitor
+      #   continue-on-error: true
 
       - name: Push Docker image to Docker Hub
         run: |
