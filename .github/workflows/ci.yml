@@ -8,37 +8,37 @@ on:
   workflow_dispatch:
 
 jobs:
-  # build-and-test:
-  #   runs-on: arc-runners
-  #   steps:
-  #     - name: Checkout Repository
-  #       uses: actions/checkout@v4
+  build-and-test:
+    runs-on: arc-runners
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '22'
-  #         cache: 'npm'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
 
-  #     - name: Install Dependencies
-  #       run: npm ci
+      - name: Install Dependencies
+        run: npm ci
 
-  #     - name: Check Nx status
-  #       run: npx nx report
+      - name: Check Nx status
+        run: npx nx report
 
-  #     - name: Run Tests
-  #       run: npx nx lint next-app
-  #       continue-on-error: true
+      - name: Run Tests
+        run: npx nx lint next-app
+        continue-on-error: true
 
-  #     - name: Code Quality Analysis with SonarCloud  
-  #       uses: SonarSource/sonarqube-scan-action@v5.3.1
-  #       with:
-  #         args: >
-  #           -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-  #           -Dsonar.organization=${{ secrets.SONAR_ORG }}
-  #           -Dsonar.sources=.
-  #       env:
-  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Code Quality Analysis with SonarCloud  
+        uses: SonarSource/sonarqube-scan-action@v5.3.1
+        with:
+          args: >
+            -Dsonar.projectKey=mini-next-app
+            -Dsonar.sources=.
+        env:
+          SONAR_TOKEN: sqp_a722b085b85d38ff5a3f200b7d1fa376cb544723
+          SONAR_HOST_URL: http://sonarqube-sonarqube.platform-core.svc.cluster.local:9000
       
   #     - name: Dependencies Analysis with Snyk
   #       uses: snyk/actions/node@master
@@ -77,9 +77,10 @@ jobs:
 
       - name: Build Docker image
         run: |
+          IMAGE_TAG=${GITHUB_SHA::8}
           docker build \
           -f ./Dockerfile \
-          -t ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:staging \
+          -t ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:$IMAGE_TAG \
           --build-arg NEXT_PUBLIC_AWS_REGION=${{ secrets.NEXT_PUBLIC_AWS_REGION }} \
           --build-arg NEXT_PUBLIC_AWS_ACCOUNT=${{ secrets.NEXT_PUBLIC_AWS_ACCOUNT }} \
           --build-arg NEXT_PUBLIC_S3_BUCKET=${{ secrets.NEXT_PUBLIC_S3_BUCKET }} \
@@ -99,7 +100,8 @@ jobs:
 
       - name: Push Docker image to Docker Hub
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:staging
+          IMAGE_TAG=${GITHUB_SHA::8}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:$IMAGE_TAG
 
   # deploy:
   #   needs: scan_and_push_image
