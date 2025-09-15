@@ -56,7 +56,7 @@ jobs:
   #         file: ./cdk
 
   scan_and_push_image:
-    runs-on: ubuntu-latest
+    runs-on: arc-runners
     # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     # needs: build-and-test
     steps:
