@@ -105,7 +105,6 @@ jobs:
 
   deploy:
     needs: scan_and_push_image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
