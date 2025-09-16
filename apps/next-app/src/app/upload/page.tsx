@@ -2,35 +2,36 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Amplify } from 'aws-amplify';
+// import { Amplify } from 'aws-amplify';
 import {
   getCurrentUser,
   fetchUserAttributes,
   signOut,
 } from 'aws-amplify/auth';
-import { getUrl, uploadData } from 'aws-amplify/storage';
+// import { getUrl, uploadData } from 'aws-amplify/storage';
 
 // ---- Amplify config (kept in this single file) ----
 // Make sure these env vars exist in .env.local and are exposed as NEXT_PUBLIC_*
-Amplify.configure(
-  {
-    Auth: {
-      Cognito: {
-        userPoolId: process.env.NEXT_PUBLIC_USER_POOL_ID!,
-        userPoolClientId: process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID!,
-        identityPoolId: process.env.NEXT_PUBLIC_USER_POOL_IDENTITY_ID!,
-        loginWith: { email: true },
-      },
-    },
-    Storage: {
-      S3: {
-        bucket: process.env.NEXT_PUBLIC_S3_BUCKET!,
-        region: process.env.NEXT_PUBLIC_AWS_REGION!, 
-      },
-    },
-  },
-  { ssr: true }
-);
+// Amplify.configure(
+//   {
+//     Auth: {
+//       Cognito: {
+//         userPoolId: process.env.NEXT_PUBLIC_USER_POOL_ID!,
+//         userPoolClientId: process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID!,
+//         identityPoolId: process.env.NEXT_PUBLIC_USER_POOL_IDENTITY_ID!,
+//         loginWith: { email: true },
+//       },
+//     },
+//     Storage: {
+//       S3: {
+//         bucket: process.env.NEXT_PUBLIC_S3_BUCKET!,
+//         region: process.env.NEXT_PUBLIC_AWS_REGION!, 
+//       },
+//     },
+//   },
+//   { ssr: true }
+// );
+const token = process.env.NEXT_PUBLIC_API_TOKEN;
 
 export default function Page() {
   const router = useRouter();
@@ -93,37 +94,81 @@ export default function Page() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setStatus(null);
+    setStatus('Uploading...');
     setFileUrl(null);
     setProgress(0);
-
-    // You can namespace keys by user or date; here we timestamp.
-    const objectPath = `uploads/${Date.now()}-${file.name}`;
-
+    
     try {
-      const task = uploadData({
-        path: objectPath,
-        data: file,
-        options: {
-          contentType: file.type || 'application/octet-stream',
-          onProgress: ({ transferredBytes, totalBytes }) => {
-            if (totalBytes) {
-              setProgress(Math.round((transferredBytes / totalBytes) * 100));
-            }
+      const form = new FormData();
+      // field name must be "file" to match your curl: -F file=@...
+      form.append('file', file);
+
+      const res = await fetch(
+        'http://bff-service.services.svc.cluster.local/api/upload',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + token,
           },
-        },
-      })
-      console.log("Pdf uploaded sucessfully", task);
-      const { path } = await task.result;
-      const { url } = await getUrl({path})
-      setFileUrl(url.toString())
-      console.log(path);
-    } catch (e: any) {
-      setStatus(e?.message || 'Upload failed');
+          body: form,
+        }
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(
+          `Upload failed: ${res.status} ${res.statusText}${
+            text ? ` - ${text}` : ''
+          }`
+        );
+      }
+
+      let data: any = null;
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        data = await res.json();
+      } else {
+        data = await res.text();
+      }
+
+      setStatus('Uploaded');
+      if (data?.url) {
+        setFileUrl(data.url);
+      }
+    } catch (err: any) {
+      setStatus(err?.message || 'Upload failed');
     } finally {
       if (inputRef.current) inputRef.current.value = '';
       setProgress(0);
     }
+
+    // You can namespace keys by user or date; here we timestamp.
+    // const objectPath = `uploads/${Date.now()}-${file.name}`;
+
+    // try {
+    //   const task = uploadData({
+    //     path: objectPath,
+    //     data: file,
+    //     options: {
+    //       contentType: file.type || 'application/octet-stream',
+    //       onProgress: ({ transferredBytes, totalBytes }) => {
+    //         if (totalBytes) {
+    //           setProgress(Math.round((transferredBytes / totalBytes) * 100));
+    //         }
+    //       },
+    //     },
+    //   })
+    //   console.log("Pdf uploaded sucessfully", task);
+    //   const { path } = await task.result;
+    //   const { url } = await getUrl({path})
+    //   setFileUrl(url.toString())
+    //   console.log(path);
+    // } catch (e: any) {
+    //   setStatus(e?.message || 'Upload failed');
+    // } finally {
+    //   if (inputRef.current) inputRef.current.value = '';
+    //   setProgress(0);
+    // }
   }
 
   if (!authChecked) return null; // avoid UI flash while checking
