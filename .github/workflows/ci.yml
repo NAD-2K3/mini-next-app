@@ -103,25 +103,28 @@ jobs:
           IMAGE_TAG=${GITHUB_SHA::8}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:$IMAGE_TAG
 
-  # deploy:
-  #   needs: scan_and_push_image
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Repository
-  #       uses: actions/checkout@v4
+  deploy:
+    needs: scan_and_push_image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  #     - id: deploy
-  #       uses: bitovi/github-actions-deploy-docker-to-ec2@v1.0.2
-  #       with:
-  #         aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws_default_region: ap-southeast-1
+      - name: Install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
 
-  #         aws_elb_create: false
-  #         aws_ec2_port_list: 22,80,443
+      - name: Clone repo for ArgoCD manifests
+        run: |
+          IMAGE_TAG=${GITHUB_SHA::8}
+          git config --global user.name "hungphaminnomizetech"
+          git config --global user.email "hung.pham@innomizetech.com"
+          git clone https://github.com/innomizetech/k8s-gitops-apps.git k8s-gitops-apps
+          cd k8s-gitops-apps
+          yq -i ".image.tag = \"${IMAGE_TAG}\"" envs/dev/services/web-app/values.yaml
 
-  #         docker_install: true
-  #         docker_repo_app_directory: "/" 
-
-  #         env_ghs: DOT_ENV
+          git add envs/dev/services/web-app/values.yaml
+          git commit -m "Update web-app image tag to ${IMAGE_TAG}"
+          git push origin main
