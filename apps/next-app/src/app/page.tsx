@@ -10,7 +10,7 @@ export default function Index() {
           <div id="welcome">
             <h1>
               <span> Hello there, </span>
-              Welcome @next-app/next-app_STAGING 👋
+              Welcome @next-app/next-app_TESTING_FOR_IMAGE_UPDATER 👋
             </h1>
           </div>
 
