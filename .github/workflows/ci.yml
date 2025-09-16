@@ -8,37 +8,37 @@ on:
   workflow_dispatch:
 
 jobs:
-  # build-and-test:
-  #   runs-on: arc-runners
-  #   steps:
-  #     - name: Checkout Repository
-  #       uses: actions/checkout@v4
+  build-and-test:
+    runs-on: arc-runners
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '22'
-  #         cache: 'npm'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
 
-  #     - name: Install Dependencies
-  #       run: npm ci
+      - name: Install Dependencies
+        run: npm ci
 
-  #     - name: Check Nx status
-  #       run: npx nx report
+      - name: Check Nx status
+        run: npx nx report
 
-  #     - name: Run Tests
-  #       run: npx nx lint next-app
-  #       continue-on-error: true
+      - name: Run Tests
+        run: npx nx lint next-app
+        continue-on-error: true
 
-  #     - name: Code Quality Analysis with SonarCloud  
-  #       uses: SonarSource/sonarqube-scan-action@v5.3.1
-  #       with:
-  #         args: >
-  #           -Dsonar.projectKey=mini-next-app
-  #           -Dsonar.sources=.
-  #       env:
-  #         SONAR_TOKEN: sqp_a722b085b85d38ff5a3f200b7d1fa376cb544723
-  #         SONAR_HOST_URL: http://sonarqube-sonarqube.platform-core.svc.cluster.local:9000
+      - name: Code Quality Analysis with SonarCloud  
+        uses: SonarSource/sonarqube-scan-action@v5.3.1
+        with:
+          args: >
+            -Dsonar.projectKey=mini-next-app
+            -Dsonar.sources=.
+        env:
+          SONAR_TOKEN: sqp_a722b085b85d38ff5a3f200b7d1fa376cb544723
+          SONAR_HOST_URL: http://sonarqube-sonarqube.platform-core.svc.cluster.local:9000
       
   #     - name: Dependencies Analysis with Snyk
   #       uses: snyk/actions/node@master
@@ -102,28 +102,3 @@ jobs:
         run: |
           IMAGE_TAG=${GITHUB_SHA::8}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/mini-next-app:$IMAGE_TAG
-
-  deploy:
-    needs: scan_and_push_image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install yq
-        run: |
-          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
-
-      - name: Clone repo for ArgoCD manifests
-        run: |
-          IMAGE_TAG=${GITHUB_SHA::8}
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/innomizetech/k8s-gitops-apps.git k8s-gitops-apps
-          cd k8s-gitops-apps
-          yq -i ".image.tag = \"${IMAGE_TAG}\"" envs/dev/services/web-app/values.yaml
-
-          git add envs/dev/services/web-app/values.yaml
-          git commit -m "Update web-app image tag to ${IMAGE_TAG}"
-          git push origin main
