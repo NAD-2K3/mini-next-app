@@ -118,9 +118,9 @@ jobs:
       - name: Clone repo for ArgoCD manifests
         run: |
           IMAGE_TAG=${GITHUB_SHA::8}
-          git config --global user.name "hungphaminnomizetech"
-          git config --global user.email "hung.pham@innomizetech.com"
-          git clone https://github.com/innomizetech/k8s-gitops-apps.git k8s-gitops-apps
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/innomizetech/k8s-gitops-apps.git k8s-gitops-apps
           cd k8s-gitops-apps
           yq -i ".image.tag = \"${IMAGE_TAG}\"" envs/dev/services/web-app/values.yaml
 
