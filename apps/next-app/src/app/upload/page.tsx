@@ -104,7 +104,7 @@ export default function Page() {
       form.append('file', file);
 
       const res = await fetch(
-        'http://bff-service.services.svc.cluster.local/api/upload',
+        'api/upload',
         {
           method: 'POST',
           headers: {
