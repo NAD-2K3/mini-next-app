@@ -37,7 +37,7 @@ jobs:
             -Dsonar.projectKey=mini-next-app
             -Dsonar.sources=.
         env:
-          SONAR_TOKEN: sqp_a722b085b85d38ff5a3f200b7d1fa376cb544723
+          SONAR_TOKEN: sqp_f64a3500c02fc9a7669cae12ef5398e67d5cbdea
           SONAR_HOST_URL: http://sonarqube-sonarqube.platform-core.svc.cluster.local:9000
       
   #     - name: Dependencies Analysis with Snyk
