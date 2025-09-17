@@ -87,6 +87,7 @@ jobs:
           --build-arg NEXT_PUBLIC_USER_POOL_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_ID }} \
           --build-arg NEXT_PUBLIC_USER_POOL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_CLIENT_ID }} \
           --build-arg NEXT_PUBLIC_USER_POOL_IDENTITY_ID=${{ secrets.NEXT_PUBLIC_USER_POOL_IDENTITY_ID }} \
+          --build-arg NEXT_PUBLIC_API_TOKEN=${{ secrets.NEXT_PUBLIC_API_TOKEN }} \
           .
 
       # - name: Scan Docker image with Snyk
